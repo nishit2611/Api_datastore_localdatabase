@@ -1,58 +1,54 @@
-package com.example.myapplication;
+package com.example.retro;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.List;
+import com.example.retro.client.ApiClient;
+import com.example.retro.client.ApiInterface;
+
+import java.util.ArrayList;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity
-{
-  RecyclerView recview;
+public class MainActivity extends AppCompatActivity {
 
+
+    RecyclerView recyclerView;
+    RVServiceListAdapter rvServiceListAdapter;
+    ArrayList<ServicesList> servicesLists;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-         recview=findViewById(R.id.recview);
-         recview.setLayoutManager(new LinearLayoutManager(this));
-
-       processdata();
-
+        servicesLists = new ArrayList<>();
+        recyclerView=findViewById(R.id.recview);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+        rvServiceListAdapter=new RVServiceListAdapter(MainActivity.this,servicesLists);
+        recyclerView.setAdapter(rvServiceListAdapter);
+        populateServices();
     }
-
-    public  void processdata()
-    {
-        Call<List<responsemodel>> call =apiController
-                .getInstance()
-                .getapi()
-                .getdata();
-
-        call.enqueue(new Callback<List<responsemodel>>() {
+    public void populateServices(){
+        ApiClient.getClient().create(ApiInterface.class).getServiceList().enqueue(new Callback<ServiceListApiResponse>() {
             @Override
-            public void onResponse(Call<List<responsemodel>> call, Response<List<responsemodel>> response) {
-                List<responsemodel> data=response.body();
-                myadapter adapter = new myadapter(data);
-                recview.setAdapter(adapter);
+            public void onResponse(Call<ServiceListApiResponse> call, Response<ServiceListApiResponse> response) {
+                if (response.code()== 200){
+                    if (response.body().isStatus()){
+                       servicesLists.addAll(response.body().getResponce());
+                       rvServiceListAdapter.notifyDataSetChanged();
+                    }
+                }
             }
 
             @Override
-            public void onFailure(Call<List<responsemodel>> call, Throwable t) {
-                Toast.makeText(getApplicationContext(),t.toString(), Toast.LENGTH_LONG).show();
+            public void onFailure(Call<ServiceListApiResponse> call, Throwable t) {
+
             }
         });
-
     }
 }
